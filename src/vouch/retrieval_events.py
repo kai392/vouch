@@ -162,6 +162,7 @@ def read_events(store: KBStore, *, limit: int | None = None) -> list[dict[str, A
                 out.append(obj)
     except OSError:
         return []
-    if limit is not None and limit >= 0:
-        return out[-limit:]
-    return out
+    if limit is None:
+        return out
+    # `out[-0:]` is `out[:]`, so a zero limit would return the whole log.
+    return out[-limit:] if limit > 0 else []

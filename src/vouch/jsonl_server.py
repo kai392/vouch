@@ -760,7 +760,9 @@ def _h_audit(p: dict) -> dict:
     s = _store()
     viewer = viewer_from_params(s, p)
     tail = int(p.get("tail", 50))
-    events = list(audit.read_events(s.kb_dir, store=s, viewer=viewer))[-tail:]
+    events = audit.tail_events(
+        list(audit.read_events(s.kb_dir, store=s, viewer=viewer)), tail
+    )
     return {
         "viewer": {"project": viewer.project, "agent": viewer.agent},
         "events": [e.model_dump(mode="json") for e in events],

@@ -1152,7 +1152,9 @@ def kb_audit(
         project=project,
         agent=agent,
     )
-    events = list(audit.read_events(store.kb_dir, store=store, viewer=viewer))[-tail:]
+    events = audit.tail_events(
+        list(audit.read_events(store.kb_dir, store=store, viewer=viewer)), tail
+    )
     return {
         "viewer": {"project": viewer.project, "agent": viewer.agent},
         "events": [e.model_dump(mode="json") for e in events],

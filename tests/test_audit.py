@@ -17,6 +17,31 @@ def store(tmp_path: Path) -> KBStore:
     return KBStore.init(tmp_path)
 
 
+@pytest.mark.parametrize("tail,expected", [(3, 3), (1, 1), (99, 5), (0, 0), (-1, 0)])
+def test_tail_events_never_widens_the_window(
+    store: KBStore, tail: int, expected: int
+) -> None:
+    """A non-positive tail selects nothing.
+
+    `events[-tail:]` reads as "the last N" but `-0 == 0`, so a zero tail
+    sliced from the start and returned the entire log — the opposite of the
+    bound asked for. A negative tail dropped that many off the front instead.
+    """
+    for i in range(5):
+        audit.log_event(store.kb_dir, event=f"x.e{i}", actor="u")
+    events = list(audit.read_events(store.kb_dir))
+
+    assert len(audit.tail_events(events, tail)) == expected
+
+
+def test_tail_events_keeps_the_newest(store: KBStore) -> None:
+    for i in range(5):
+        audit.log_event(store.kb_dir, event=f"x.e{i}", actor="u")
+    events = list(audit.read_events(store.kb_dir))
+
+    assert [e.event for e in audit.tail_events(events, 2)] == ["x.e3", "x.e4"]
+
+
 def test_audit_log_appends(store: KBStore) -> None:
     audit.log_event(store.kb_dir, event="x.test", actor="u", object_ids=["a"])
     audit.log_event(store.kb_dir, event="x.test2", actor="u")

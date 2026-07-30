@@ -17,6 +17,26 @@ def store(tmp_path: Path) -> KBStore:
     return KBStore.init(tmp_path)
 
 
+def test_jsonl_audit_zero_tail_returns_no_events(store: KBStore, monkeypatch) -> None:
+    """`kb.audit` with tail=0 must return nothing, not the whole log.
+
+    The window was `events[-tail:]`, and `-0` is `0`, so asking for zero
+    events sliced from the start and dumped every event the viewer could see.
+    """
+    from vouch import audit
+
+    for i in range(4):
+        audit.log_event(store.kb_dir, event=f"x.e{i}", actor="u")
+    monkeypatch.chdir(store.root)
+
+    resp = handle_request({"id": "r1", "method": "kb.audit", "params": {"tail": 0}})
+    assert resp["ok"]
+    assert resp["result"]["events"] == []
+
+    bounded = handle_request({"id": "r2", "method": "kb.audit", "params": {"tail": 2}})
+    assert [e["event"] for e in bounded["result"]["events"]] == ["x.e2", "x.e3"]
+
+
 def test_jsonl_search_request(store: KBStore, monkeypatch) -> None:
     src = store.put_source(b"e")
     store.put_claim(Claim(id="c1", text="findable token", evidence=[src.id]))

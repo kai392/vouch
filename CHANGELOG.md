@@ -25,6 +25,13 @@ All notable changes to vouch are documented here. Format follows
   `prompt_gate_cfg` still used bare `bool()`, so a quoted
   `enabled: "false"` silently turned those features *on*. both now
   use `coerce_bool`.
+- **a zero `tail` on `kb.audit` returns no events, not every event**: the
+  window was `events[-tail:]`, and `-0` is `0`, so asking for zero events
+  sliced from the start and handed back the whole visible log — a negative
+  tail dropped that many off the front and returned the rest. all three
+  surfaces (mcp, jsonl, cli) now share `audit.tail_events`, so the clamp
+  cannot drift between them. `retrieval_events.read_events` carried the same
+  `[-limit:]` boundary and is fixed with it.
 - **digest drops archived followup pages** (#625):
   `followups_due` already skipped `done`/`dropped` metadata, but an
   `ARCHIVED` page with `followup_status=open` and a past `due_at` still

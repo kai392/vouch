@@ -240,6 +240,18 @@ def read_events(
             yield event
 
 
+def tail_events(events: list[AuditEvent], tail: int) -> list[AuditEvent]:
+    """The newest ``tail`` events; none when ``tail`` is not positive.
+
+    ``events[-tail:]`` is the obvious spelling and is wrong at the boundary:
+    ``-0`` is ``0``, so a zero tail slices from the start and hands back the
+    whole log — the opposite of the bound the caller asked for. A negative tail
+    is worse, dropping that many events off the front and returning the rest.
+    Shared by the three ``kb.audit`` surfaces so the clamp cannot drift.
+    """
+    return events[-tail:] if tail > 0 else []
+
+
 def count_events(kb_dir: Path) -> int:
     path = _audit_path(kb_dir)
     if not path.exists():

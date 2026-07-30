@@ -3956,7 +3956,9 @@ def audit(tail: int, as_json: bool, project: str | None, agent: str | None) -> N
         project=project,
         agent=agent,
     )
-    events = list(audit_mod.read_events(store.kb_dir, store=store, viewer=viewer))[-tail:]
+    events = audit_mod.tail_events(
+        list(audit_mod.read_events(store.kb_dir, store=store, viewer=viewer)), tail
+    )
     if as_json:
         _emit_json({
             "viewer": {"project": viewer.project, "agent": viewer.agent},
