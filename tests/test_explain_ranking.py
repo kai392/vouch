@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -135,6 +136,32 @@ def test_scope_filtered_candidate_is_attributed_to_scope(store: KBStore) -> None
     ))["c-priv"]
     assert cand["gate"] == "scope-filtered"
     assert _stages(cand) == ["hybrid"]
+
+
+def test_scope_filtered_candidate_does_not_carry_its_summary(store: KBStore) -> None:
+    """The gate that hid a candidate is reported; the text behind it is not.
+
+    `kb.search` returns nothing for this viewer, so the same viewer asking
+    `kb.explain_ranking` must not get the claim text back through the
+    candidate's summary.
+    """
+    secret = "jwt signing secret is hunter2-example"
+    store.put_claim(Claim(
+        id="c-priv", text=secret,
+        evidence=[store.list_sources()[0].id],
+        scope=ArtifactScope(visibility=Visibility.PRIVATE, project="other-project"),
+    ))
+    health.rebuild_index(store)
+
+    result = er.explain_ranking(store, query="jwt", limit=5, project="this-project")
+    cand = _by_id(result)["c-priv"]
+
+    assert cand["gate"] == "scope-filtered"
+    assert cand["summary"] == ""
+    assert "hunter2-example" not in json.dumps(result)
+
+    # a candidate the viewer *can* retrieve still carries its summary
+    assert _by_id(result)["c1"]["summary"]
 
 
 def test_require_citations_names_the_uncited_claim(store: KBStore) -> None:

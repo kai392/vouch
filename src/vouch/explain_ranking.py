@@ -33,8 +33,10 @@ it did not change.
 
 Read-only by construction: every helper called here is one the read path
 already uses, and nothing writes, proposes, or mutates the KB. Viewer scoping
-runs through the same ``filter_hits`` as ``kb.context``, so a caller cannot
-see a candidate it could not already retrieve.
+runs through the same ``filter_hits`` as ``kb.context``: a candidate the
+viewer cannot retrieve is still listed, because naming the gate that hid it is
+the point of the report, but it is listed without its summary — the content
+``kb.search`` and ``kb.context`` withhold for that viewer is withheld here too.
 """
 
 from __future__ import annotations
@@ -281,8 +283,12 @@ def explain_ranking(
 
     # Every candidate the pipeline ever saw, in the order fusion produced them,
     # so a dropped artifact is still explained rather than silently missing.
+    # Summaries come from the *scoped* set: a candidate the viewer cannot
+    # retrieve keeps its gate attribution — that is the point of the report —
+    # but not its text. `kb.search` and `kb.context` withhold that summary for
+    # this viewer, so this surface must not hand it back.
     candidates: list[dict[str, Any]] = []
-    summaries = {_key(h): h[2] for h in hits}
+    summaries = {_key(h): h[2] for h in scoped}
     for hit in hits:
         key = _key(hit)
         rows, gate = _stage_rows(key, snapshots)

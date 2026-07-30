@@ -20,6 +20,13 @@ All notable changes to vouch are documented here. Format follows
   artifact the caller could not already retrieve, and it touches no write path.
 
 ### Fixed
+- **`kb.explain_ranking` no longer returns the summary of a scope-filtered
+  candidate**: the report listed every candidate the pipeline saw, sourcing
+  summaries from the pre-scope fused set, so a viewer got back the claim text
+  of artifacts `kb.search` and `kb.context` withhold for that same viewer — the
+  opposite of the module's stated scoping invariant. the candidate is still
+  listed with its `scope-filtered` gate, since naming the gate that hid it is
+  the point of the report; only the summary is withheld.
 - **`verify_all` / `doctor` treat missing externals like drift** (#622):
   `vouch source verify` already marked `external_status=missing` as `!`,
   but `verify_all`'s audit `failed` list and `health.doctor` only looked
